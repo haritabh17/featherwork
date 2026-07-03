@@ -31,10 +31,11 @@ Append the fingerprint to the `sha256_cert_fingerprints` array in `.well-known/a
 ## Share URL format
 
 ```
-https://badmlabs.github.io/court/import.html?d=<base64>
+https://badmlabs.github.io/i.html?d=<base64url>
 ```
 
-Also supported for backward compatibility: `/court/import?d=...` and `/court/import/?d=...`.
+Also supported for backward compatibility: `/court/import.html?d=...`, `/court/import?d=...`
+and `/court/import/?d=...`.
 
 ## Future apps
 

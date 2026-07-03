@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Open Badminton Drill</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
+    a { color: #1565c0; }
+  </style>
+</head>
+<body>
+  <h1>Badminton Court Simulator</h1>
+  <p id="status">Opening app…</p>
+  <p><a id="fallback" href="#">Tap here if the app did not open</a></p>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const d = params.get('d');
+    if (!d) {
+      document.getElementById('status').textContent = 'Missing drill data in this link.';
+      document.getElementById('fallback').style.display = 'none';
+    } else {
+      const appLink = 'badminton-court-simulator://import?d=' + encodeURIComponent(d);
+      document.getElementById('fallback').href = appLink;
+      location.replace(appLink);
+    }
+  </script>
+</body>
+</html>

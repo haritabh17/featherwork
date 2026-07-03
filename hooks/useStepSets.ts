@@ -35,37 +35,54 @@ export function useStepSets() {
     };
   }, []);
 
-  const persistStepSets = useCallback(async (nextStepSets: StepSet[]) => {
-    setStepSets(nextStepSets);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextStepSets));
+  const writeToStorage = (nextStepSets: StepSet[]) => {
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextStepSets)).catch((error) => {
+      console.error('Failed to save step sets:', error);
+    });
+  };
+
+  // Functional updates keep these callbacks stable across renders, so
+  // consumers can safely list them in effect dependencies.
+  const saveStepSet = useCallback(async (stepSet: StepSet) => {
+    setStepSets((prev) => {
+      const next = [stepSet, ...prev.filter((existing) => existing.id !== stepSet.id)];
+      writeToStorage(next);
+      return next;
+    });
+    return stepSet;
   }, []);
 
-  const saveStepSet = useCallback(async (stepSet: StepSet) => {
-    const nextStepSets = [stepSet, ...stepSets.filter((existing) => existing.id !== stepSet.id)];
-    await persistStepSets(nextStepSets);
-    return stepSet;
-  }, [persistStepSets, stepSets]);
-
   const deleteStepSet = useCallback(async (id: string) => {
-    const nextStepSets = stepSets.filter((stepSet) => stepSet.id !== id);
-    await persistStepSets(nextStepSets);
-  }, [persistStepSets, stepSets]);
+    setStepSets((prev) => {
+      const next = prev.filter((stepSet) => stepSet.id !== id);
+      writeToStorage(next);
+      return next;
+    });
+  }, []);
 
-  const importStepSet = useCallback(async (stepSet: StepSet) => {
-    const existing = stepSets.find((item) => item.id === stepSet.id);
-    if (existing) {
-      return existing;
-    }
-
-    await saveStepSet(stepSet);
+  const replaceStepSet = useCallback(async (existingId: string, stepSet: StepSet) => {
+    setStepSets((prev) => {
+      const next = [
+        stepSet,
+        ...prev.filter((item) => item.id !== existingId && item.id !== stepSet.id),
+      ];
+      writeToStorage(next);
+      return next;
+    });
     return stepSet;
-  }, [saveStepSet, stepSets]);
+  }, []);
+
+  const importStepSet = useCallback(
+    async (stepSet: StepSet) => saveStepSet(stepSet),
+    [saveStepSet]
+  );
 
   return {
     stepSets,
     isLoading,
     saveStepSet,
     deleteStepSet,
+    replaceStepSet,
     importStepSet,
   };
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Dimensions, Alert, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,6 +19,10 @@ import { palette, radii, shadows, spacing } from '../constants/theme';
 const HEADER_CONTENT_HEIGHT = 56;
 const DOCK_HEIGHT = 78;
 
+// Module-level so remounts (e.g. via the +not-found redirect) never
+// re-import a URL that was already handled in this app session.
+const consumedShareUrls = new Set<string>();
+
 export default function BadmintonCourt() {
   const insets = useSafeAreaInsets();
   const screenWidth = Dimensions.get('window').width;
@@ -33,7 +37,7 @@ export default function BadmintonCourt() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [isStepSetsVisible, setIsStepSetsVisible] = useState(false);
   const { customizations, updateMarkerCustomization } = useMarkerCustomization();
-  const { stepSets, saveStepSet, deleteStepSet, importStepSet } = useStepSets();
+  const { stepSets, saveStepSet, deleteStepSet, replaceStepSet, importStepSet } = useStepSets();
 
   const {
     isDoubles,
@@ -58,30 +62,62 @@ export default function BadmintonCourt() {
     stepCount,
   } = useCourtPositions({ width: courtWidth, height: courtHeight });
 
+  const applyImport = useCallback(async (stepSet: StepSet, replaceId?: string) => {
+    const saved = replaceId
+      ? await replaceStepSet(replaceId, stepSet)
+      : await importStepSet(stepSet);
+    loadNormalizedSteps(saved.steps, saved.isDoubles);
+    Alert.alert('Imported', `"${saved.name}" has been imported and loaded.`);
+  }, [importStepSet, loadNormalizedSteps, replaceStepSet]);
+
   const handleImportStepSet = useCallback(async (stepSet: StepSet) => {
-    const savedStepSet = await importStepSet(stepSet);
-    loadNormalizedSteps(savedStepSet.steps, savedStepSet.isDoubles);
-  }, [importStepSet, loadNormalizedSteps]);
+    const existing = stepSets.find((item) => item.name === stepSet.name);
 
-  const handleIncomingUrl = useCallback(async (url: string | null) => {
-    if (!url) return;
+    if (existing) {
+      Alert.alert(
+        'Drill already exists',
+        `A drill named "${stepSet.name}" is already saved. Replace it?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Replace',
+            style: 'destructive',
+            onPress: () => applyImport(stepSet, existing.id),
+          },
+        ]
+      );
+      return;
+    }
 
-    const imported = decodeSharedStepSet(url);
-    if (!imported) return;
+    await applyImport(stepSet);
+  }, [applyImport, stepSets]);
 
-    await handleImportStepSet(imported);
-    Alert.alert('Imported', `"${imported.name}" has been imported and loaded.`);
+  const handleImportStepSetRef = useRef(handleImportStepSet);
+  useEffect(() => {
+    handleImportStepSetRef.current = handleImportStepSet;
   }, [handleImportStepSet]);
 
   useEffect(() => {
-    Linking.getInitialURL().then(handleIncomingUrl);
+    const importFromUrl = (url: string | null) => {
+      if (!url) return;
+      const imported = decodeSharedStepSet(url);
+      if (!imported) return;
+      handleImportStepSetRef.current(imported);
+    };
+
+    Linking.getInitialURL().then((url) => {
+      if (!url || consumedShareUrls.has(url)) return;
+      consumedShareUrls.add(url);
+      importFromUrl(url);
+    });
 
     const subscription = Linking.addEventListener('url', ({ url }) => {
-      handleIncomingUrl(url);
+      consumedShareUrls.add(url);
+      importFromUrl(url);
     });
 
     return () => subscription.remove();
-  }, [handleIncomingUrl]);
+  }, []);
 
   const handleSaveStepSet = useCallback(async (name: string) => {
     const steps = getStepsSnapshot();

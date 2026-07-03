@@ -50,7 +50,9 @@ describe('stepSharing', () => {
     expect(decoded?.name).toBe('Serve Drill');
     expect(decoded?.isDoubles).toBe(true);
     expect(decoded?.steps).toHaveLength(2);
-    expect(decoded?.steps[0].players.team1[0].x).toBeCloseTo(0.25, 5);
+    expect(decoded?.steps[0].players.team1[0].x).toBeCloseTo(0.25, 3);
+    expect(decoded?.steps[0].players.team2[1].y).toBeCloseTo(0.3125, 3);
+    expect(decoded?.steps[1].ghostPositions.team1[0].x).toBeCloseTo(0.25, 3);
   });
 
   it('decodes legacy custom scheme links for backward compatibility', () => {
@@ -91,6 +93,47 @@ describe('stepSharing', () => {
     expect(decoded?.steps).toHaveLength(1);
   });
 
+  it('decodes v2 json links for backward compatibility', () => {
+    const v2Payload = Buffer.from(
+      JSON.stringify({
+        v: 2,
+        n: 'V2 Drill',
+        b: 1,
+        s: [[0.25, 0.25, 0.375, 0.313, 0.75, 0.25, 0.875, 0.313, 0.5, 0.5]],
+      })
+    )
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+
+    const v2Link = `https://badmlabs.github.io/court/import.html?d=${v2Payload}`;
+    const decoded = decodeSharedStepSet(v2Link);
+
+    expect(decoded?.name).toBe('V2 Drill');
+    expect(decoded?.isDoubles).toBe(true);
+    expect(decoded?.steps).toHaveLength(1);
+    expect(decoded?.steps[0].shuttle.x).toBeCloseTo(0.5, 3);
+  });
+
+  it('decodes old /court/import links with v3 payloads', () => {
+    const stepSet = createStepSet('Old Path', true, sampleSteps.slice(0, 1), {
+      width: 400,
+      height: 800,
+    });
+    const payload = encodeStepSetForSharing(stepSet).split('?d=')[1];
+
+    const decodedNoSlash = decodeSharedStepSet(
+      `https://badmlabs.github.io/court/import?d=${payload}`
+    );
+    const decodedSlash = decodeSharedStepSet(
+      `https://badmlabs.github.io/court/import/?d=${payload}`
+    );
+
+    expect(decodedNoSlash?.name).toBe('Old Path');
+    expect(decodedSlash?.name).toBe('Old Path');
+  });
+
   it('uses a compact share link for multi-step drills', () => {
     const steps = Array.from({ length: 10 }, (_, index) => ({
       ...sampleSteps[0],
@@ -100,8 +143,38 @@ describe('stepSharing', () => {
     const stepSet = createStepSet('F1', true, steps, { width: 400, height: 800 });
     const link = encodeStepSetForSharing(stepSet);
 
-    expect(link.length).toBeLessThan(2500);
-    expect(decodeSharedStepSet(link)?.steps).toHaveLength(10);
+    expect(link.length).toBeLessThan(300);
+
+    const decoded = decodeSharedStepSet(link);
+    expect(decoded?.steps).toHaveLength(10);
+    expect(decoded?.steps[9].shuttle.x).toBeCloseTo(209 / 400, 3);
+    expect(decoded?.steps[9].ghostPositions.shuttle.x).toBeCloseTo(208 / 400, 3);
+  });
+
+  it('round-trips names with non-ascii characters', () => {
+    const stepSet = createStepSet('Smash 强攻 🏸', true, sampleSteps.slice(0, 1), {
+      width: 400,
+      height: 800,
+    });
+
+    const decoded = decodeSharedStepSet(encodeStepSetForSharing(stepSet));
+    expect(decoded?.name).toBe('Smash 强攻 🏸');
+  });
+
+  it('clamps off-court coordinates instead of corrupting the payload', () => {
+    const offCourt: CourtStep = {
+      ...sampleSteps[0],
+      players: {
+        team1: [{ x: -400, y: 200 }, { x: 150, y: 250 }],
+        team2: [{ x: 900, y: 200 }, { x: 350, y: 250 }],
+      },
+    };
+
+    const stepSet = createStepSet('Clamp', true, [offCourt], { width: 400, height: 800 });
+    const decoded = decodeSharedStepSet(encodeStepSetForSharing(stepSet));
+
+    expect(decoded?.steps[0].players.team1[0].x).toBeCloseTo(-0.5, 3);
+    expect(decoded?.steps[0].players.team2[0].x).toBeCloseTo(1.5, 3);
   });
 
   it('parses a share link embedded in a WhatsApp-style message', () => {

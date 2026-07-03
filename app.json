@@ -32,6 +32,11 @@
               "scheme": "https",
               "host": "badmlabs.github.io",
               "pathPrefix": "/court/import"
+            },
+            {
+              "scheme": "https",
+              "host": "badmlabs.github.io",
+              "pathPrefix": "/i"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
