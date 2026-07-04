@@ -14,7 +14,7 @@ import {
   VaultDrill,
 } from '../data/vaultDrills';
 import { STEP_SET_LIMIT } from '../hooks/useStepSets';
-import { useVaultAccess, VAULT_PLANS, VaultPlan } from '../hooks/useVaultAccess';
+import { useVaultAccess, VaultPlan } from '../hooks/useVaultAccess';
 import { palette, radii, shadows, sora, spacing } from '../constants/theme';
 
 export type DrillHubTab = 'mine' | 'vault';
@@ -78,7 +78,7 @@ export function DrillHubPanel({
   onImport,
   onLoadDrill,
 }: DrillHubPanelProps) {
-  const { isSubscribed, subscribe, cancel } = vault;
+  const { isSubscribed, plans, subscribe, restore, manageSubscription } = vault;
   const [activeTab, setActiveTab] = useState<DrillHubTab>(initialTab);
   const [activeCategory, setActiveCategory] = useState<VaultCategory | 'All'>('All');
   const [paywallVisible, setPaywallVisible] = useState(false);
@@ -112,29 +112,40 @@ export function DrillHubPanel({
   const handleSubscribe = async () => {
     setIsPurchasing(true);
     try {
-      await subscribe(selectedPlan);
-      setPaywallVisible(false);
-      appAlert(
-        'Welcome to Drill Vault Pro',
-        'All premium drills are unlocked. Load any drill and step through it on court.'
-      );
+      const active = await subscribe(selectedPlan);
+      if (active) {
+        setPaywallVisible(false);
+        appAlert(
+          'Welcome to Drill Vault Pro',
+          'All premium drills are unlocked. Load any drill and step through it on court.'
+        );
+      }
+      // false = user backed out of the Play sheet; nothing to say.
     } catch (error) {
-      appAlert('Purchase failed', 'Could not complete the purchase. Please try again.');
+      appAlert(
+        'Purchase failed',
+        error instanceof Error ? error.message : 'Could not complete the purchase. Please try again.'
+      );
       console.error(error);
     } finally {
       setIsPurchasing(false);
     }
   };
 
-  const handleCancelSubscription = () => {
-    appAlert(
-      'Cancel subscription',
-      'Premium drills will lock again. (Test build: this simply resets the simulated purchase.)',
-      [
-        { text: 'Keep Pro', style: 'cancel' },
-        { text: 'Cancel Pro', style: 'destructive', onPress: () => cancel() },
-      ]
-    );
+  const handleRestore = async () => {
+    try {
+      const active = await restore();
+      appAlert(
+        active ? 'Purchases restored' : 'Nothing to restore',
+        active
+          ? 'Drill Vault Pro is active on this device.'
+          : 'No previous Drill Vault Pro purchase was found for this Google account.'
+      );
+      if (active) setPaywallVisible(false);
+    } catch (error) {
+      appAlert('Restore failed', 'Could not reach Google Play. Please try again later.');
+      console.error(error);
+    }
   };
 
   const handleSave = async () => {
@@ -378,16 +389,17 @@ export function DrillHubPanel({
                     <MaterialCommunityIcons name="chevron-right" size={22} color={palette.accent} />
                   </TouchableOpacity>
                 ) : (
-                  <TouchableOpacity style={styles.unlockBanner} onPress={handleCancelSubscription}>
+                  <TouchableOpacity style={styles.unlockBanner} onPress={manageSubscription}>
                     <View style={styles.unlockBannerIcon}>
                       <MaterialCommunityIcons name="crown" size={22} color={palette.accent} />
                     </View>
                     <View style={styles.bannerInfo}>
                       <Text style={styles.unlockBannerTitle}>Drill Vault Pro is active</Text>
                       <Text style={styles.unlockBannerMeta}>
-                        All drills unlocked · tap to manage
+                        All drills unlocked · manage in Google Play
                       </Text>
                     </View>
+                    <MaterialCommunityIcons name="open-in-new" size={18} color={palette.accent} />
                   </TouchableOpacity>
                 )}
 
@@ -519,7 +531,7 @@ export function DrillHubPanel({
               ))}
 
               <View style={styles.planRow}>
-                {VAULT_PLANS.map((plan) => {
+                {plans.map((plan) => {
                   const selected = selectedPlan === plan.id;
                   return (
                     <TouchableOpacity
@@ -550,9 +562,12 @@ export function DrillHubPanel({
                   {isPurchasing ? 'Processing…' : 'Subscribe'}
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity onPress={handleRestore} hitSlop={6}>
+                <Text style={styles.restoreLink}>Restore purchases</Text>
+              </TouchableOpacity>
               <Text style={styles.finePrint}>
-                Test build: purchases are simulated and nothing is charged. Cancel anytime from the
-                Pro banner in the vault.
+                Billed through Google Play as an auto-renewing subscription. Cancel anytime in
+                Play Store → Payments &amp; subscriptions.
               </Text>
             </View>
           </View>
@@ -1126,6 +1141,13 @@ const styles = StyleSheet.create({
     ...sora('700'),
     color: palette.onAccent,
     fontSize: 15,
+  },
+  restoreLink: {
+    ...sora('600'),
+    color: palette.textSecondary,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: spacing.md,
   },
   finePrint: {
     ...sora('400'),
