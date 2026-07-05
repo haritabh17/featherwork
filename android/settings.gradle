@@ -21,7 +21,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
   }
 }
 
-rootProject.name = 'Badminton Court Simulator'
+rootProject.name = 'Featherwork'
 
 dependencyResolutionManagement {
   versionCatalogs {

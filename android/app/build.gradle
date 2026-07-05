@@ -98,8 +98,8 @@ android {
         applicationId 'com.haritabhgupta.badmintoncourtsimulator'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10
-        versionName "2.1.0"
+        versionCode 20
+        versionName "2.9.0"
     }
     signingConfigs {
         debug {

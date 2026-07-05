@@ -27,7 +27,7 @@
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#15754E"
       },
       "package": "com.haritabhgupta.badmintoncourtsimulator",
       "versionCode": 20,
