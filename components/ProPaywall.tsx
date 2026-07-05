@@ -109,7 +109,6 @@ export function ProPaywall({ visible, onClose, vault, onSubscribed }: ProPaywall
 
             <Text style={styles.comingSoonLabel}>Coming soon to Pro</Text>
             {[
-              { icon: 'play-speed', text: 'Auto-play practice mode for courtside training' },
               { icon: 'account-group-outline', text: 'Club workspace: team libraries & session plans' },
             ].map(({ icon, text }) => (
               <View key={text} style={styles.bulletRow}>
