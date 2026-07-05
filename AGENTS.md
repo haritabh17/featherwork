@@ -43,6 +43,20 @@ Ground truth for saved drills: use a `google_apis` (non-Play) emulator image so 
 - `context/` — app state (React context)
 - `utils/`, `types/`, `constants/`, `hooks/` — what they say
 
+## Releases
+
+- Versions live in **app.json only** (`expo.version` + `expo.android.versionCode`); CI's `expo prebuild` stamps them over build.gradle, so bumping build.gradle alone gets silently reverted.
+- Flow: merge PRs to main → bump app.json on main (`chore(release): bump to X.Y.Z (versionCode N)`) → create tag `vX.Y.Z` targeting main (GitHub release) → the tag run builds **and deploys to the Play internal track** via fastlane. Push-to-main runs build only.
+- Every uploaded artifact needs a fresh, higher `versionCode` — a failed upload does *not* consume its code.
+- Play rejects artifacts that declare the BILLING permission without a packaged Billing Library ≥ 6.0.1 (react-native-purchases satisfies this).
+
+### Production-day checklist (deliberately deferred until first prod rollout)
+
+- Play listing **App name → `Featherwork: Badminton Drills`**, plus descriptions and `store-assets/` screenshots/feature graphic/promo video (kept out of the listing until production on purpose).
+- App content forms: Data safety (collects Purchase history + device IDs, nothing shared), content rating questionnaire, ads = none, target audience 13+.
+- Privacy policy URL: `https://badmlabs.github.io/privacy.html`.
+- Glance at the Pre-launch report, then promote the current internal release to Production (staged rollout: start at 20%, go 100% after ~48 quiet hours).
+
 ## Conventions
 
 - Commit messages: Conventional Commits, `type(scope): description`.

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Image,
+  Linking,
   Modal,
   ScrollView,
   StyleSheet,
@@ -807,6 +808,23 @@ export function SettingsPanel({
           </View>
         </TouchableOpacity>
       )}
+
+      <Text style={styles.sectionLabel}>About</Text>
+      <TouchableOpacity
+        style={styles.aboutRow}
+        onPress={() =>
+          Linking.openURL('https://badmlabs.github.io/privacy.html').catch(() => {})
+        }
+        accessibilityLabel="Privacy policy"
+      >
+        <MaterialCommunityIcons
+          name="shield-lock-outline"
+          size={17}
+          color={palette.textSecondary}
+        />
+        <Text style={styles.aboutRowText}>Privacy Policy</Text>
+        <MaterialCommunityIcons name="open-in-new" size={14} color={palette.textMuted} />
+      </TouchableOpacity>
     </>
   );
 
@@ -1407,6 +1425,23 @@ const styles = StyleSheet.create({
     color: palette.textMuted,
     marginTop: spacing.xs,
     marginBottom: 7,
+  },
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: palette.card,
+    borderWidth: 1,
+    borderColor: palette.cardBorder,
+    borderRadius: radii.md,
+    paddingVertical: 11,
+    paddingHorizontal: spacing.md,
+  },
+  aboutRowText: {
+    ...sora('600'),
+    flex: 1,
+    color: palette.textPrimary,
+    fontSize: 13,
   },
   modeCard: {
     flexDirection: 'row',
