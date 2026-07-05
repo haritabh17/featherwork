@@ -2,7 +2,7 @@
   "expo": {
     "name": "Featherwork",
     "slug": "badminton-court-simulator",
-    "version": "2.5.0",
+    "version": "2.6.0",
     "scheme": "badminton-court-simulator",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.haritabhgupta.badmintoncourtsimulator",
-      "versionCode": 15,
+      "versionCode": 16,
       "permissions": ["com.android.vending.BILLING"],
       "intentFilters": [
         {
