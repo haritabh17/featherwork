@@ -16,17 +16,18 @@ Deploy **contents of this folder** (not the `links-site` folder itself) to the r
 
 ## Release fingerprint
 
-`assetlinks.json` includes the **debug** keystore SHA256 for local/emulator builds.
+`assetlinks.json` includes only the **Play App Signing** certificate SHA256
+(Play Console → **Setup → App signing → App signing key certificate**).
+The debug keystore fingerprint is deliberately excluded — the debug keystore is
+committed to a public repo, so listing it would let anyone's rebuild pass App
+Links verification for this domain.
 
-For Play Store builds, add your **release/upload** certificate SHA256:
+Local/emulator builds therefore don't auto-verify links. To test link import
+locally, either tap through the app-chooser dialog or force verification:
 
 ```bash
-keytool -list -v -keystore YOUR_RELEASE_KEYSTORE -alias YOUR_ALIAS
+adb shell pm set-app-links --package com.haritabhgupta.badmintoncourtsimulator 2 all
 ```
-
-Or Play Console → **Setup → App signing → SHA-256 certificate fingerprint**.
-
-Append the fingerprint to the `sha256_cert_fingerprints` array in `.well-known/assetlinks.json`.
 
 ## Share URL format
 
