@@ -50,6 +50,13 @@ Ground truth for saved drills: use a `google_apis` (non-Play) emulator image so 
 - Every uploaded artifact needs a fresh, higher `versionCode` — a failed upload does *not* consume its code.
 - Play rejects artifacts that declare the BILLING permission without a packaged Billing Library ≥ 6.0.1 (react-native-purchases satisfies this).
 
+### OTA updates (EAS Update)
+
+- All content is JS (drills in `data/vaultDrills.ts`, mascots/themes in components), so monthly drops ship over the air without a store release: `npx eas-cli update --branch production --message "..."` (needs `npx eas-cli login`; project `@haritabh1992/badminton-court-simulator`).
+- `expo.runtimeVersion` in app.json is a manually pinned string (bare workflow — version policies are unsupported by `eas update`). **Bump it in any release that changes native code** (Expo SDK upgrade, new native module/dep); leave it alone for JS-only releases so one publish reaches every store build sharing that runtime.
+- Clients download the update in the background on launch and apply it on the **next** launch (`EXPO_UPDATES_CHECK_ON_LAUNCH=ALWAYS`, `LAUNCH_WAIT_MS=0`).
+- The update channel is baked into builds via `updates.requestHeaders` in app.json (channel `production` → EAS branch `production`).
+
 ### Production-day checklist (deliberately deferred until first prod rollout)
 
 - Play listing **App name → `Featherwork: Badminton Drills`**, plus descriptions and `store-assets/` screenshots/feature graphic/promo video (kept out of the listing until production on purpose).
