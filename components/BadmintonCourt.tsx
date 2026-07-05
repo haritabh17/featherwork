@@ -18,6 +18,7 @@ import { drillStepsForCourt, VaultDrill } from '../data/vaultDrills';
 import { useVaultAccess } from '../hooks/useVaultAccess';
 import { useMarkerCustomization } from '../context/MarkerCustomizationContext';
 import { createStepSet, decodeSharedStepSet } from '../utils/stepSharing';
+import { maybeAskQuarterlyReview } from '../utils/reviewPrompt';
 import { NormalizedStep, StepSet } from '../types/drill';
 import { palette, radii, shadows, sora, spacing } from '../constants/theme';
 
@@ -421,6 +422,10 @@ export default function BadmintonCourt() {
     });
 
     return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    maybeAskQuarterlyReview();
   }, []);
 
   const handleSaveStepSet = useCallback(async (name: string) => {

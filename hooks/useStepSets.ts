@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StepSet } from '../types/drill';
 import { appAlert } from '../utils/appAlert';
+import { recordSaveForReviewPrompt } from '../utils/reviewPrompt';
 
 const STORAGE_KEY = 'badminton-step-sets';
 /** Free tier keeps this many saved drills; Drill Vault Pro lifts the cap. */
@@ -72,6 +73,9 @@ export function useStepSets({ isPro = false, onLimitReached }: UseStepSetsOption
       writeToStorage(next);
       return next;
     });
+    // Fire-and-forget: a successful save is the engagement signal for the
+    // one-time Play in-app review prompt.
+    recordSaveForReviewPrompt();
     return stepSet;
   }, [stepSets, isPro, onLimitReached]);
 
